@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slack Copy Paste</title>
+    <style>
+      :root {
+        /* Color variables */
+        --color-background: oklch(98% 0.01 240);
+        --color-text: oklch(25% 0.02 240);
+        --color-primary: oklch(55% 0.2 250);
+        --color-secondary: oklch(90% 0.05 250);
+        --color-accent: oklch(70% 0.15 160);
+
+        /* Spacing variables */
+        --space-xs: 0.5rem;
+        --space-sm: 1rem;
+        --space-md: 2rem;
+        --space-lg: 3rem;
+        --space-xl: 5rem;
+
+        /* Font variables */
+        --font-size-base: 1rem;
+        --font-size-sm: 0.875rem;
+        --font-size-lg: 1.25rem;
+        --font-size-xl: 1.5rem;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue',
+          sans-serif;
+        background-color: var(--color-background);
+        color: var(--color-text);
+        min-height: 100vh;
+        font-size: var(--font-size-base);
+        line-height: 1.5;
+      }
+
+      .paste-area {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-background);
+        z-index: 10;
+        padding: var(--space-md);
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+
+      .paste-area.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .paste-zone {
+        width: 80%;
+        height: 60vh;
+        border: 3px dashed var(--color-primary);
+        border-radius: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-lg);
+        text-align: center;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        background-color: var(--color-secondary);
+      }
+
+      .paste-zone:hover,
+      .paste-zone:focus {
+        background-color: oklch(85% 0.08 250);
+      }
+
+      .paste-title {
+        font-size: var(--font-size-xl);
+        margin-bottom: var(--space-sm);
+        color: var(--color-primary);
+      }
+
+      .result-area {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        padding: var(--space-lg);
+        padding-top: calc(var(--space-lg) + 3rem);
+        overflow-y: auto;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+      }
+
+      .result-area.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .output-container {
+        width: 100%;
+        max-width: 60rem;
+        margin: 0 auto;
+        min-height: 80vh;
+        padding: var(--space-md);
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        outline: none;
+      }
+
+      .output-container:focus {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+      }
+
+      .output-container hr {
+        margin: 0.5em 0;
+      }
+
+      .nav-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: var(--space-sm);
+        background-color: var(--color-background);
+        z-index: 5;
+      }
+
+      .back-button {
+        padding: var(--space-xs) var(--space-sm);
+        background-color: var(--color-accent);
+        color: white;
+        border: none;
+        border-radius: 0.25rem;
+        font-size: var(--font-size-base);
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .back-button:hover {
+        background-color: oklch(60% 0.18 160);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="paste-area">
+      <h1 class="paste-title">Slack Copy Paste</h1>
+      <div class="paste-zone" tabindex="0">
+        <h2>Press Ctrl+V / ⌘V to paste</h2>
+      </div>
+    </div>
+
+    <div class="nav-bar">
+      <button class="back-button">Go back</button>
+    </div>
+
+    <div class="result-area hidden">
+      <div class="output-container" contenteditable="true"></div>
+    </div>
+
+    <div class="error-message"></div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "lit-html": "https://esm.sh/lit-html@3.3.0",
+          "lit-html/": "https://esm.sh/lit-html@3.3.0/"
+        }
+      }
+    </script>
+    <script type="module">
+      import { ExtractSlack } from './src/slack.js';
+
+      // DOM Elements
+      const pasteAreaEl = document.querySelector('.paste-area');
+      const pasteZoneEl = document.querySelector('.paste-zone');
+      const resultAreaEl = document.querySelector('.result-area');
+      const outputEl = document.querySelector('.output-container');
+      const backButtonEl = document.querySelector('.back-button');
+      const errorMessage = document.querySelector('.error-message');
+
+      function init() {
+        // Event Listeners
+        document.addEventListener('paste', handlePaste);
+        pasteZoneEl.addEventListener('dragover', handleDragOver);
+        pasteZoneEl.addEventListener('dragleave', handleDragLeave);
+        pasteZoneEl.addEventListener('drop', handleDrop);
+        backButtonEl.addEventListener('click', goBack);
+
+        // Make the paste area clickable to focus (helps on mobile)
+        pasteZoneEl.addEventListener('click', () => {
+          pasteZoneEl.focus();
+        });
+      }
+
+      // Process pasted content
+      function handlePaste(e) {
+        e.preventDefault();
+
+        let htmlContent = '';
+
+        const clipboardData = e.clipboardData || window.clipboardData;
+
+        htmlContent = clipboardData.getData('text/html');
+
+        // If no HTML, use plain text
+        if (!htmlContent) {
+          htmlContent = clipboardData.getData('text');
+        }
+
+        processHTML(htmlContent);
+        document.removeEventListener('paste', handlePaste);
+      }
+
+      // Handle drag and drop
+      function handleDragOver(e) {
+        e.preventDefault();
+        pasteAreaEl.classList.add('highlight');
+      }
+
+      function handleDragLeave(e) {
+        e.preventDefault();
+        pasteAreaEl.classList.remove('highlight');
+      }
+
+      function handleDrop(e) {
+        e.preventDefault();
+        pasteAreaEl.classList.remove('highlight');
+
+        const file = e.dataTransfer.files[0];
+        if (
+          file &&
+          (file.type === 'text/html' ||
+            file.name.endsWith('.html') ||
+            file.type === 'text/plain')
+        ) {
+          const reader = new FileReader();
+          reader.onload = function (event) {
+            processHTML(event.target.result);
+          };
+          reader.readAsText(file);
+        } else {
+          showError('Please drop an HTML file.');
+        }
+      }
+
+      // Process HTML content
+      function processHTML(htmlContent) {
+        try {
+          errorMessage.textContent = '';
+
+          const parser = new ExtractSlack({ authorLinks: true });
+          parser.parse(htmlContent);
+          parser.render(outputEl);
+
+          pasteAreaEl.classList.add('hidden');
+          resultAreaEl.classList.remove('hidden');
+          backButtonEl.classList.remove('hidden');
+        } catch (error) {
+          showError('Error processing HTML: ' + error.message);
+          console.error('Error processing HTML:', error);
+        }
+      }
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        setTimeout(() => {
+          errorMessage.textContent = '';
+        }, 5000);
+      }
+
+      // Go back to paste area
+      function goBack() {
+        pasteAreaEl.classList.remove('hidden');
+        resultAreaEl.classList.remove('hidden');
+        backButtonEl.classList.remove('hidden');
+
+        document.addEventListener('paste', handlePaste);
+      }
+
+      window.addEventListener('load', init);
+    </script>
+  </body>
+</html>
