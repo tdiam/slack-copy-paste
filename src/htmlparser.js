@@ -1,8 +1,11 @@
+import { render } from 'lit-html';
+
 export class HTMLParser {
   constructor() {
     this.document = null;
     this.enterHandlers = {};
     this.exitHandlers = {};
+    this.replacements = new Map();
     this._collectHandlers();
   }
 
@@ -28,6 +31,9 @@ export class HTMLParser {
 
     // Process the document using TreeWalker
     this._processDocument();
+
+    // Apply all replacements after traversal
+    this._applyReplacements();
 
     return this.getResults();
   }
@@ -78,9 +84,37 @@ export class HTMLParser {
   _processHandlers(element, handlers) {
     for (const selector in handlers) {
       if (element.matches(selector)) {
-        handlers[selector](element);
+        const result = handlers[selector](element);
+        if (result !== undefined) {
+          this.replacements.set(element, result);
+        }
       }
     }
+  }
+
+  _applyReplacements() {
+    // Apply replacements in reverse order to avoid issues with nested replacements
+    const elements = Array.from(this.replacements.keys()).reverse();
+    for (const element of elements) {
+      const replacement = this.replacements.get(element);
+
+      if (replacement === null) {
+        // Remove the element if the handler returned null
+        element.remove();
+      } else {
+        // Create a temporary container for lit-html rendering
+        const temp = document.createElement('div');
+
+        if (typeof replacement === 'string') {
+          element.outerHTML = replacement;
+        } else {
+          // Assume it's a lit-html template result
+          render(replacement, temp);
+          element.outerHTML = temp.innerHTML;
+        }
+      }
+    }
+    this.replacements.clear();
   }
 
   // This should be overridden by subclasses
