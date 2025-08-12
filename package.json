@@ -1,0 +1,23 @@
+{
+  "name": "slack-copy-paste",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "serve",
+    "test": "node --test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.7.0",
+  "devDependencies": {
+    "global-jsdom": "^26.0.0",
+    "jsdom": "^26.1.0",
+    "serve": "^14.2.4"
+  },
+  "dependencies": {
+    "lit-html": "^3.3.1"
+  }
+}

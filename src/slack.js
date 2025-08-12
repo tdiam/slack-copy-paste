@@ -1,5 +1,5 @@
 import { html, render } from 'lit-html';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
 
 import { HTMLParser } from './htmlparser.js';
 
