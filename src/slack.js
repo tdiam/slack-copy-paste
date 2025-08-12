@@ -3,6 +3,47 @@ import { unsafeHTML } from 'lit-html/directives/unsafe-html';
 
 import { HTMLParser } from './htmlparser.js';
 
+class ExtractSlackMessageContent extends HTMLParser {
+  constructor(options = {}) {
+    super();
+    this.options = options;
+  }
+
+  'enter:[data-qa=emoji]'(el) {
+    if (!this.options.includeEmoji) {
+      return null;
+    }
+
+    const img = el.querySelector('img');
+    if (img) {
+      img.style.top = 'auto';
+    }
+
+    return unsafeHTML(`<br />${el.outerHTML}<br />`);
+  }
+
+  // Get rid of Slack's list styles
+  'enter:ol'(el) {
+    el.removeAttribute('style');
+  }
+
+  'enter:ul'(el) {
+    el.removeAttribute('style');
+  }
+
+  'exit:.c-message__edited_label'() {
+    return null;
+  }
+
+  'exit:.c-mrkdwn__br'(el) {
+    return '<br />';
+  }
+
+  getResults() {
+    return unsafeHTML(this.document.body.innerHTML);
+  }
+}
+
 export class ExtractSlack extends HTMLParser {
   constructor(options = {}) {
     super();
@@ -40,8 +81,9 @@ export class ExtractSlack extends HTMLParser {
     );
   }
 
-  'enter:.p-rich_text_section'(el) {
-    this.slots.message.content = unsafeHTML(el.innerHTML);
+  'enter:.p-rich_text_block'(el) {
+    const parser = new ExtractSlackMessageContent(this.options);
+    this.slots.message.content = parser.parse(el.innerHTML);
   }
 
   formatDate(dt) {
@@ -92,10 +134,8 @@ export class ExtractSlack extends HTMLParser {
       return html`<time datetime=${iso}>${formatted}</time>`;
     };
 
-    return html`
-      ${renderHeader()}
-      <p>${m.content}</p>
-    `;
+    return html`${renderHeader()}
+      <p>${m.content}</p>`;
   }
 
   render(el) {

@@ -10,8 +10,12 @@
         --color-background: oklch(98% 0.01 240);
         --color-text: oklch(25% 0.02 240);
         --color-primary: oklch(55% 0.2 250);
+        --color-primary-hover: oklch(50% 0.2 250);
         --color-secondary: oklch(90% 0.05 250);
-        --color-accent: oklch(70% 0.15 160);
+        --color-secondary-hover: oklch(85% 0.08 250);
+        --color-accent: oklch(55% 0.02 240);
+        --color-accent-text: oklch(100 0 0);
+        --color-accent-hover: oklch(50% 0.02 240);
 
         /* Spacing variables */
         --space-xs: 0.5rem;
@@ -84,7 +88,7 @@
 
       .paste-zone:hover,
       .paste-zone:focus {
-        background-color: oklch(85% 0.08 250);
+        background-color: var(--color-secondary-hover);
       }
 
       .paste-title {
@@ -94,13 +98,10 @@
       }
 
       .result-area {
-        position: fixed;
-        top: 0;
-        left: 0;
         width: 100%;
         height: 100%;
-        padding: var(--space-lg);
-        padding-top: calc(var(--space-lg) + 3rem);
+        padding: var(--space-sm);
+        padding-top: var(--space-lg);
         overflow-y: auto;
         transition: opacity 0.3s ease, visibility 0.3s ease;
       }
@@ -118,44 +119,79 @@
         min-height: 80vh;
         padding: var(--space-md);
         background-color: white;
+        border: 1px solid var(--color-secondary);
         border-radius: 0.5rem;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
         outline: none;
       }
 
       .output-container:focus {
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+        outline: 2px solid var(--color-primary);
       }
 
       .output-container hr {
         margin: 0.5em 0;
       }
 
-      .nav-bar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
+      .action-bar {
         display: flex;
-        justify-content: center;
-        padding: var(--space-sm);
+        width: 100%;
+        max-width: 60rem;
+        margin: 0 auto;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-sm) 0;
         background-color: var(--color-background);
-        z-index: 5;
       }
 
-      .back-button {
+      .action-bar-left,
+      .action-bar-right {
+        display: flex;
+        gap: var(--space-sm);
+      }
+
+      .back-button,
+      .copy-button {
         padding: var(--space-xs) var(--space-sm);
         background-color: var(--color-accent);
-        color: white;
-        border: none;
+        color: var(--color-accent-text);
+        border: 1px solid var(--color-secondary);
         border-radius: 0.25rem;
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-sm);
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
         cursor: pointer;
         transition: background-color 0.2s ease;
       }
 
       .back-button:hover {
-        background-color: oklch(60% 0.18 160);
+        background-color: var(--color-accent-hover);
+      }
+
+      .copy-button {
+        background-color: var(--color-primary);
+        color: white;
+      }
+
+      .copy-button:hover {
+        background-color: var(--color-primary-hover);
+      }
+
+      .checkbox-control {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+        font-size: var(--font-size-sm);
+      }
+
+      .checkbox-control input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+      }
+
+      /* Content styles */
+      .output-container hr {
+        margin: 0.5em 0;
       }
     </style>
   </head>
@@ -167,12 +203,41 @@
       </div>
     </div>
 
-    <div class="nav-bar">
-      <button class="back-button">Go back</button>
-    </div>
-
     <div class="result-area hidden">
       <div class="output-container" contenteditable="true"></div>
+    </div>
+
+    <div class="action-bar">
+      <div class="action-bar-left">
+        <button class="back-button">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            width="12"
+            height="12"
+          >
+            <path d="M19 13H4" />
+            <path d="M11 21L4 13 11 5" />
+          </svg>
+          Go back
+        </button>
+        <copy-button></copy-button>
+      </div>
+      <div class="action-bar-right">
+        <label class="checkbox-control">
+          <input type="checkbox" id="includeAuthorLinks" checked>
+          Include author links
+        </label>
+        <label class="checkbox-control">
+          <input type="checkbox" id="includeEmoji">
+          Include emoji
+        </label>
+      </div>
     </div>
 
     <div class="error-message"></div>
@@ -181,12 +246,15 @@
       {
         "imports": {
           "lit-html": "https://esm.sh/lit-html@3.3.0",
-          "lit-html/": "https://esm.sh/lit-html@3.3.0/"
+          "lit-html/": "https://esm.sh/lit-html@3.3.0/",
+          "./src/copy-button.js": "./src/copy-button.js"
         }
       }
     </script>
     <script type="module">
+      import { html, render } from 'lit-html';
       import { ExtractSlack } from './src/slack.js';
+      import './src/copy-button.js';
 
       // DOM Elements
       const pasteAreaEl = document.querySelector('.paste-area');
@@ -194,7 +262,13 @@
       const resultAreaEl = document.querySelector('.result-area');
       const outputEl = document.querySelector('.output-container');
       const backButtonEl = document.querySelector('.back-button');
+      const copyButtonEl = document.querySelector('copy-button');
       const errorMessage = document.querySelector('.error-message');
+      const includeEmojiCheckbox = document.querySelector('#includeEmoji');
+      const includeAuthorLinksCheckbox = document.querySelector('#includeAuthorLinks');
+
+      // Store original content
+      let pastedContent = '';
 
       function init() {
         // Event Listeners
@@ -203,6 +277,12 @@
         pasteZoneEl.addEventListener('dragleave', handleDragLeave);
         pasteZoneEl.addEventListener('drop', handleDrop);
         backButtonEl.addEventListener('click', goBack);
+        copyButtonEl.addEventListener('copy-error', (e) => {
+          showError('Failed to copy content');
+          console.error('Failed to copy:', e.detail.error);
+        });
+        includeEmojiCheckbox.addEventListener('change', handleSettingsChange);
+        includeAuthorLinksCheckbox.addEventListener('change', handleSettingsChange);
 
         // Make the paste area clickable to focus (helps on mobile)
         pasteZoneEl.addEventListener('click', () => {
@@ -225,6 +305,8 @@
           htmlContent = clipboardData.getData('text');
         }
 
+        // Store original content
+        pastedContent = htmlContent;
         processHTML(htmlContent);
         document.removeEventListener('paste', handlePaste);
       }
@@ -253,6 +335,8 @@
         ) {
           const reader = new FileReader();
           reader.onload = function (event) {
+            // Store original content
+            pastedContent = event.target.result;
             processHTML(event.target.result);
           };
           reader.readAsText(file);
@@ -264,11 +348,21 @@
       // Process HTML content
       function processHTML(htmlContent) {
         try {
+          render(html``, outputEl);
+          copyButtonEl.setContent(null);
           errorMessage.textContent = '';
 
-          const parser = new ExtractSlack({ authorLinks: true });
+          const parser = new ExtractSlack({ 
+            authorLinks: includeAuthorLinksCheckbox.checked,
+            includeEmoji: includeEmojiCheckbox.checked 
+          });
           parser.parse(htmlContent);
           parser.render(outputEl);
+
+          // Update copy button click handler
+          copyButtonEl.setContent(new ClipboardItem({
+            'text/html': new Blob([outputEl.innerHTML], { type: 'text/html' })
+          }));
 
           pasteAreaEl.classList.add('hidden');
           resultAreaEl.classList.remove('hidden');
@@ -291,8 +385,19 @@
         pasteAreaEl.classList.remove('hidden');
         resultAreaEl.classList.remove('hidden');
         backButtonEl.classList.remove('hidden');
+        pastedContent = ''; // Reset pasted content
+        
+        // Reset copy button state
+        copyButtonEl.reset();
 
         document.addEventListener('paste', handlePaste);
+      }
+
+      function handleSettingsChange() {
+        // Re-process the original content with new settings
+        if (pastedContent) {
+          processHTML(pastedContent);
+        }
       }
 
       window.addEventListener('load', init);
