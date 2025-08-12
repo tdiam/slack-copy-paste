@@ -1,0 +1,187 @@
+:root {
+  /* Color variables */
+  --color-background: oklch(98% 0.01 240);
+  --color-text: oklch(25% 0.02 240);
+  --color-primary: oklch(55% 0.2 250);
+  --color-primary-hover: oklch(50% 0.2 250);
+  --color-secondary: oklch(90% 0.05 250);
+  --color-secondary-hover: oklch(85% 0.08 250);
+  --color-accent: oklch(55% 0.02 240);
+  --color-accent-text: oklch(100 0 0);
+  --color-accent-hover: oklch(50% 0.02 240);
+
+  /* Spacing variables */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 2rem;
+  --space-lg: 3rem;
+  --space-xl: 5rem;
+
+  /* Font variables */
+  --font-size-base: 1rem;
+  --font-size-sm: 0.875rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  min-height: 100vh;
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+}
+
+.paste-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-background);
+  z-index: 10;
+  padding: var(--space-md);
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.paste-area.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.paste-zone {
+  width: 80%;
+  height: 60vh;
+  border: 3px dashed var(--color-primary);
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  background-color: var(--color-secondary);
+}
+
+.paste-zone:hover,
+.paste-zone:focus {
+  background-color: var(--color-secondary-hover);
+}
+
+.paste-title {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-sm);
+  color: var(--color-primary);
+}
+
+.result-area {
+  width: 100%;
+  height: 100%;
+  padding: var(--space-sm);
+  padding-top: var(--space-lg);
+  overflow-y: auto;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.result-area.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.output-container {
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  min-height: 80vh;
+  padding: var(--space-md);
+  background-color: white;
+  border: 1px solid var(--color-secondary);
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+.output-container:focus {
+  outline: 2px solid var(--color-primary);
+}
+
+.output-container hr {
+  margin: 0.5em 0;
+}
+
+.action-bar {
+  display: flex;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  background-color: var(--color-background);
+}
+
+.action-bar-left,
+.action-bar-right {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.back-button,
+.copy-button {
+  padding: var(--space-xs) var(--space-sm);
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  border: 1px solid var(--color-secondary);
+  border-radius: 0.25rem;
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.copy-button {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.copy-button:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.checkbox-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+}
+
+.checkbox-control input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Content styles */
+.output-container hr {
+  margin: 0.5em 0;
+}
